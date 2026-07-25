@@ -39,12 +39,17 @@ ALGOLIA_INDEX   = "asda_prod__products__default"
 ALGOLIA_URL     = f"https://{ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/{ALGOLIA_INDEX}/query"
 
 # Category filter — "Toys & Character" in the Sale & Offers section
-CATEGORY_FILTER = 'categoryPageId:"Sale & Offers > Offers > Offers > Toys & Character"'
+# Combined filter — Toys AND Electricals sale sections
+CATEGORY_FILTER = (
+    'categoryPageId:"Sale & Offers > Offers > Offers > Toys & Character" '
+    'OR categoryPageId:"Sale & Offers > Offers > Offers > Electricals"'
+)
 GEORGE_BASE_URL = "https://direct.asda.com"
-LISTING_URL     = f"{GEORGE_BASE_URL}/george/toys-character/D30,default,sc.html?displayAs=George&pmid=toys-toy-sale"
+LISTING_URL_TOYS = f"{GEORGE_BASE_URL}/george/toys-character/D30,default,sc.html?displayAs=George&pmid=toys-toy-sale"
+LISTING_URL_ELEC = f"{GEORGE_BASE_URL}/george/electricals/D59,default,sc.html?displayas=george&pmid=electricals-sale"
 
-SNAPSHOT_FILE  = "snapshot_george_toys.json"
-BASELINE_FLAG  = "baseline_done_george_toys.txt"
+SNAPSHOT_FILE  = "snapshot_george_sale.json"
+BASELINE_FLAG  = "baseline_done_george_sale.txt"
 CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", "3600"))   # 60 min default
 RUN_ONCE       = os.getenv("RUN_ONCE", "false").lower() == "true"
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK", "")
@@ -212,7 +217,7 @@ def _embed(title_text, url, colour, fields, product):
         "color":     colour,
         "fields":    fields,
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "footer":    {"text": "George (ASDA) Toys Monitor • direct.asda.com/george"},
+        "footer":    {"text": "George (ASDA) Sale Monitor • Toys & Electricals"},
     }
     if product.get("image"):
         embed["thumbnail"] = {"url": product["image"]}
@@ -411,13 +416,13 @@ def run_check():
 # ---------------------------------------------------------------------------
 
 def main():
-    print("=" * 56)
-    print("  ASDA George Toys Sale Monitor")
-    print(f"  {LISTING_URL}")
+    print("=" * 60)
+    print("  ASDA George Sale Monitor (Toys + Electricals)")
+    print(f"  Toys:        {LISTING_URL_TOYS}")
+    print(f"  Electricals: {LISTING_URL_ELEC}")
     print(f"  Source: Algolia API (no HTML scraping)")
-    print(f"  Category filter: Toys & Character on sale")
     print(f"  Interval: {CHECK_INTERVAL}s ({CHECK_INTERVAL//60} min)")
-    print("=" * 56)
+    print("=" * 60)
 
     if not DISCORD_WEBHOOK:
         print("  ⚠️  DISCORD_WEBHOOK not set — alerts will be suppressed")
