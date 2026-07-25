@@ -1,21 +1,21 @@
-name: George Toys Sale Monitor
+name: George Sale Monitor (Toys + Electricals)
 
 on:
   schedule:
-    - cron: "0 */1 * * *"   # every hour (Algolia has generous rate limits)
+    - cron: "0 */1 * * *"   # every hour
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: george-toys-monitor
+  group: george-sale-monitor
   cancel-in-progress: false
 
 jobs:
   monitor:
     runs-on: ubuntu-latest
-    timeout-minutes: 10   # Algolia is fast — no scraping
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repo
@@ -35,13 +35,13 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_GEORGE }}
           RUN_ONCE: "true"
-        run: python george_toys_monitor.py
+        run: python george_sale_monitor.py
 
       - name: Commit updated snapshot
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin main || true
-          git add snapshot_george_toys.json baseline_done_george_toys.txt 2>/dev/null || true
+          git add snapshot_george_sale.json baseline_done_george_sale.txt 2>/dev/null || true
           git diff --cached --quiet || git commit -m "chore: update george snapshot [skip ci]"
           git push origin HEAD:main
