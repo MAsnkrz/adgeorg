@@ -125,14 +125,16 @@ def parse_product(hit):
     ean_raw = str(hit.get("primary_image") or "").strip()
     ean     = ean_raw if re.match(r"^\d{8,14}$", ean_raw) else ""
 
-    # Image URL — George CDN format
+    # Image URL — George uses Scene7 CDN with EAN as image ID
     image = ""
     if ean_raw:
-        image = (f"https://ui.assets-asda.com/dm/asdaStaticAssets/george-product-images"
-                 f"/{ean_raw}_R_Z001A?w=400&h=400&fmt=auto")
+        image = f"https://asda.scene7.com/is/image/Asda/{ean_raw}?wid=400&hei=400&fmt=webp"
 
     # Product URL — construct from product_id
     url = f"{GEORGE_BASE_URL}/george/search?q={product_id}"
+
+    # Stock — both in_stock AND online must be true to be purchasable
+    in_stock = bool(hit.get("in_stock")) and bool(hit.get("online", True))
 
     return {
         "id":       product_id,
