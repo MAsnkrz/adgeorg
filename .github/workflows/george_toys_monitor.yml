@@ -1,0 +1,47 @@
+name: George Toys Sale Monitor
+
+on:
+  schedule:
+    - cron: "0 */1 * * *"   # every hour (Algolia has generous rate limits)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: george-toys-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10   # Algolia is fast — no scraping
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run monitor
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_GEORGE }}
+          RUN_ONCE: "true"
+        run: python george_toys_monitor.py
+
+      - name: Commit updated snapshot
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main || true
+          git add snapshot_george_toys.json baseline_done_george_toys.txt 2>/dev/null || true
+          git diff --cached --quiet || git commit -m "chore: update george snapshot [skip ci]"
+          git push origin HEAD:main
