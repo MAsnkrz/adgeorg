@@ -74,8 +74,9 @@ ALGOLIA_HEADERS = {
 }
 
 RETRIEVE_ATTRS = [
-    "name", "current_price", "in_stock", "product_id",
+    "name", "current_price", "in_stock", "online", "product_id",
     "primary_image", "brand", "objectID", "availability_flag",
+    "gender", "type", "product_type",
 ]
 
 
@@ -135,8 +136,19 @@ def parse_product(hit):
     if ean_raw:
         image = f"https://asda.scene7.com/is/image/Asda/{ean_raw}?wid=400&hei=400&fmt=webp"
 
-    # Product URL — construct from product_id
-    url = f"{GEORGE_BASE_URL}/george/search?q={product_id}"
+    # Construct product URL: /george/{base_cat}/{name-slug}/{product_id},default,pd.html
+    slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") if name else product_id
+    gender_val = hit.get("gender", "").lower()
+    type_val   = (hit.get("type", "") or hit.get("product_type", "")).lower()
+    if "toys" in gender_val or "baby" in type_val:
+        base_cat = "toys-character"
+    elif any(k in type_val for k in ["electrical", "kitchen", "tech", "appliance", "gaming", "audio"]):
+        base_cat = "electricals"
+    elif any(k in type_val for k in ["garden", "outdoor"]):
+        base_cat = "garden-outdoor"
+    else:
+        base_cat = "george"
+    url = f"{GEORGE_BASE_URL}/george/{base_cat}/{slug}/{product_id},default,pd.html"
 
     # Stock — both in_stock AND online must be true to be purchasable
     in_stock = bool(hit.get("in_stock")) and bool(hit.get("online", True))
